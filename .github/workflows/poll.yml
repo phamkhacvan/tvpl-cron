@@ -1,0 +1,30 @@
+name: tvpl-poll
+
+# GitHub Actions không cho lịch dưới 5 phút, nên cứ 5 phút khởi động 1 job
+# rồi bên trong tự gọi lại mỗi 60 giây -> hiệu quả ~1 phút/lần.
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: tvpl-poll
+  cancel-in-progress: false
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Poll /api/check moi ~60s trong ~5 phut
+        env:
+          CHECK_URL: ${{ secrets.CHECK_URL }}
+        run: |
+          if [ -z "$CHECK_URL" ]; then
+            echo "Thieu secret CHECK_URL"; exit 1
+          fi
+          for i in 1 2 3 4 5; do
+            printf '%s  poll %s -> ' "$(date -u +%H:%M:%S)" "$i"
+            curl -fsS --max-time 90 "$CHECK_URL" && echo "ok" || echo "loi"
+            if [ "$i" -lt 5 ]; then sleep 60; fi
+          done

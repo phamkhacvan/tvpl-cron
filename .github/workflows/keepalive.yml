@@ -1,0 +1,25 @@
+name: keepalive
+
+# GitHub tu dong tat cac workflow theo lich (schedule) sau 60 ngay khong co
+# hoat dong repo. Job nay tao 1 commit nho moi thang de giu poll.yml luon bat.
+on:
+  schedule:
+    - cron: '0 3 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  touch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Commit heartbeat
+        run: |
+          date -u > .github/last-keepalive.txt
+          git config user.name "tvpl-cron"
+          git config user.email "tvpl-cron@users.noreply.github.com"
+          git add .github/last-keepalive.txt
+          git commit -m "keepalive $(date -u +%F)" || echo "khong co thay doi"
+          git push
